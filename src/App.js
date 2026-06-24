@@ -8,7 +8,7 @@ import { CATEGORIES, INCOME_CATS, EXPENSE_CATS } from './constants';
 import { format, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrUtH1p6VrlFVi0wVcbeRpPRogJFZksZedO-CFgSU2uzk_traUGJpvp7Bxi7OSAGZh-Q/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOYkEc0yk_Je_TsBxaPE09ZhIV2FQkGGP90vs0IG6oPbwd8S5bXswuWbMU44OV4T2MGw/exec";
 
 const fmt = n => new Intl.NumberFormat('ru-RU').format(Math.round(n || 0));
 const today = () => format(new Date(), 'yyyy-MM-dd');
