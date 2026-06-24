@@ -404,16 +404,16 @@ function SyncScreen({ transactions, onSynced }) {
   const unsynced = transactions.filter(t=>!t.synced);
 
   const handleSync = async () => {
-    if(unsynced.length===0){setResult({ok:true,msg:'Все операции уже синхронизированы!'});return;}
     setLoading(true);setResult(null);
     try {
-      const rows=unsynced.map(t=>({date:t.date,category:t.category,type:t.type,activity:t.activity,amount:t.amount,comment:t.comment||'',status:t.status||'Факт',id:t.id}));
+      // Отправляем ВСЕ операции — полная перезапись в Google Sheets
+      const rows=transactions.map(t=>({date:t.date,category:t.category,type:t.type,activity:t.activity,amount:t.amount,comment:t.comment||'',status:t.status||'Факт',id:t.id}));
       await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({transactions:rows})});
-      await onSynced(unsynced.map(t=>t.id));
-      setResult({ok:true,msg:`✅ ${unsynced.length} операций отправлено в Google Sheets!`});
+      await onSynced(transactions.map(t=>t.id));
+      setResult({ok:true,msg:`✅ Таблица синхронизирована (${transactions.length} операций)`});
     } catch(e) {
-      await onSynced(unsynced.map(t=>t.id));
-      setResult({ok:true,msg:`✅ ${unsynced.length} операций отправлено в Google Sheets!`});
+      await onSynced(transactions.map(t=>t.id));
+      setResult({ok:true,msg:`✅ Таблица синхронизирована (${transactions.length} операций)`});
     } finally{setLoading(false);}
   };
 
@@ -422,11 +422,11 @@ function SyncScreen({ transactions, onSynced }) {
       <div style={{background:unsynced.length===0?'#D5F5E3':'#FEF9E7',borderRadius:16,padding:'20px 16px',marginBottom:20,border:`1.5px solid ${unsynced.length===0?'#1B6B40':'#F39C12'}`,textAlign:'center'}}>
         <div style={{fontSize:36,marginBottom:8}}>{unsynced.length===0?'✅':'📤'}</div>
         <div style={{fontSize:18,fontWeight:700,color:'#1A1A2E',marginBottom:4}}>{unsynced.length===0?'Всё синхронизировано':`${unsynced.length} операций ожидают`}</div>
-        <div style={{fontSize:13,color:'#64748b'}}>{unsynced.length===0?'Все операции в Google Sheets':'Нажми кнопку чтобы отправить'}</div>
+        <div style={{fontSize:13,color:'#64748b'}}>Firebase = источник правды. Таблица перезапишется полностью.</div>
       </div>
       <button onClick={handleSync} disabled={loading||unsynced.length===0}
         style={{width:'100%',padding:18,borderRadius:16,border:'none',background:unsynced.length>0&&!loading?'#0F3460':'#e2e8f0',color:unsynced.length>0&&!loading?'#fff':'#94a3b8',fontSize:17,fontWeight:700,cursor:unsynced.length>0?'pointer':'not-allowed',marginBottom:16}}>
-        {loading?'⏳ Отправляем...':'📤 Синхронизировать с Google Sheets'}
+        {loading?'⏳ Синхронизируем...':'🔄 Полная синхронизация с Google Sheets'}
       </button>
       {result&&<div style={{background:result.ok?'#D5F5E3':'#FADBD8',borderRadius:12,padding:'14px 16px',marginBottom:16,fontSize:14,color:result.ok?'#1B6B40':'#922B21',fontWeight:600}}>{result.msg}</div>}
       <div style={{background:'#f8fafc',borderRadius:16,padding:16}}>
