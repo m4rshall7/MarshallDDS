@@ -419,13 +419,13 @@ function SyncScreen({ transactions, onSynced }) {
 
   return (
     <div style={{padding:'0 16px 16px',fontFamily:'Arial,sans-serif'}}>
-      <div style={{background:unsynced.length===0?'#D5F5E3':'#FEF9E7',borderRadius:16,padding:'20px 16px',marginBottom:20,border:`1.5px solid ${unsynced.length===0?'#1B6B40':'#F39C12'}`,textAlign:'center'}}>
-        <div style={{fontSize:36,marginBottom:8}}>{unsynced.length===0?'✅':'📤'}</div>
-        <div style={{fontSize:18,fontWeight:700,color:'#1A1A2E',marginBottom:4}}>{unsynced.length===0?'Всё синхронизировано':`${unsynced.length} операций ожидают`}</div>
-        <div style={{fontSize:13,color:'#64748b'}}>Firebase = источник правды. Таблица перезапишется полностью.</div>
+      <div style={{background:'#EBF5FB',borderRadius:16,padding:'20px 16px',marginBottom:20,border:'1.5px solid #0F3460',textAlign:'center'}}>
+        <div style={{fontSize:36,marginBottom:8}}>🔄</div>
+        <div style={{fontSize:18,fontWeight:700,color:'#1A1A2E',marginBottom:4}}>Полная синхронизация</div>
+        <div style={{fontSize:13,color:'#64748b'}}>Firebase = источник правды. Таблица всегда отражает данные приложения.</div>
       </div>
-      <button onClick={handleSync} disabled={loading||unsynced.length===0}
-        style={{width:'100%',padding:18,borderRadius:16,border:'none',background:unsynced.length>0&&!loading?'#0F3460':'#e2e8f0',color:unsynced.length>0&&!loading?'#fff':'#94a3b8',fontSize:17,fontWeight:700,cursor:unsynced.length>0?'pointer':'not-allowed',marginBottom:16}}>
+      <button onClick={handleSync} disabled={loading}
+        style={{width:'100%',padding:18,borderRadius:16,border:'none',background:!loading?'#0F3460':'#e2e8f0',color:!loading?'#fff':'#94a3b8',fontSize:17,fontWeight:700,cursor:'pointer',marginBottom:16,boxShadow:!loading?'0 4px 16px rgba(15,52,96,0.4)':'none'}}>
         {loading?'⏳ Синхронизируем...':'🔄 Полная синхронизация с Google Sheets'}
       </button>
       {result&&<div style={{background:result.ok?'#D5F5E3':'#FADBD8',borderRadius:12,padding:'14px 16px',marginBottom:16,fontSize:14,color:result.ok?'#1B6B40':'#922B21',fontWeight:600}}>{result.msg}</div>}
