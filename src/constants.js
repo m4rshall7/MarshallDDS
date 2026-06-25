@@ -31,4 +31,4 @@ export const ACCOUNTS = [
   { id: "cash",       name: "Наличные",               emoji: "💵", color: "#388E3C" },
 ];
 
-export const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwAujbAaMqaXCstRHEsVrDPK3Yv0nlaw5U2_eOBYgiTunb-T1z3GVVsu0TNZ6IvtrCflQ/exec";
+export const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOYkEc0yk_Je_TsBxaPE09ZhIV2FQkGGP90vs0IG6oPbwd8S5bXswuWbMU44OV4T2MGw/exec";
