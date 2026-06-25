@@ -1,13 +1,10 @@
 export const CATEGORIES = [
-  // ПОСТУПЛЕНИЯ
   { name: "Выручка WB (выплата)",       type: "Поступление", activity: "Текущая",        emoji: "💰" },
   { name: "Возврат от поставщика",       type: "Поступление", activity: "Текущая",        emoji: "↩️" },
   { name: "Получение займа / кредита",   type: "Поступление", activity: "Финансовая",     emoji: "🏦" },
   { name: "Личные вложения в бизнес",    type: "Поступление", activity: "Финансовая",     emoji: "💼" },
   { name: "Продажа оборудования",        type: "Поступление", activity: "Инвестиционная", emoji: "🔧" },
   { name: "Прочие поступления",          type: "Поступление", activity: "Текущая",        emoji: "📥" },
-
-  // ВЫПЛАТЫ
   { name: "Закупка товара",              type: "Выплата", activity: "Текущая",        emoji: "📦" },
   { name: "Логистика / доставка",        type: "Выплата", activity: "Текущая",        emoji: "🚚" },
   { name: "Реклама WB",                  type: "Выплата", activity: "Текущая",        emoji: "📣" },
@@ -24,4 +21,14 @@ export const CATEGORIES = [
 export const INCOME_CATS  = CATEGORIES.filter(c => c.type === "Поступление");
 export const EXPENSE_CATS = CATEGORIES.filter(c => c.type === "Выплата");
 
-export const SHEETS_PROXY_URL = process.env.REACT_APP_SHEETS_URL || "";
+export const ACCOUNTS = [
+  { id: "tinkoff",    name: "Тинькофф",              emoji: "🟡", color: "#F9A825" },
+  { id: "sber",       name: "Сбербанк",               emoji: "🟢", color: "#1B6B40" },
+  { id: "alfa",       name: "Альфа Банк",             emoji: "🔴", color: "#D32F2F" },
+  { id: "vtb",        name: "ВТБ",                    emoji: "🔵", color: "#1565C0" },
+  { id: "rshb",       name: "Россельхозбанк",         emoji: "🟤", color: "#5D4037" },
+  { id: "tochka",     name: "Точка (расч. счёт)",     emoji: "⚫", color: "#212121" },
+  { id: "cash",       name: "Наличные",               emoji: "💵", color: "#388E3C" },
+];
+
+export const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwAujbAaMqaXCstRHEsVrDPK3Yv0nlaw5U2_eOBYgiTunb-T1z3GVVsu0TNZ6IvtrCflQ/exec";
