@@ -581,7 +581,6 @@ function SyncScreen({ transactions, onSynced }) {
     setResult({ok:true, msg:`✅ Синхронизировано (${transactions.length} операций)`});
     setLoading(false);
   };
-  };
 
   return (
     <div style={{padding:'0 16px 16px',fontFamily:'Arial,sans-serif'}}>
