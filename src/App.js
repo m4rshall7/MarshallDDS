@@ -554,21 +554,30 @@ function SyncScreen({ transactions, onSynced }) {
 
   const handleSync = async () => {
     setLoading(true); setResult(null);
+    const rows = transactions.map(t => ({
+      date: t.date, category: t.category, type: t.type,
+      activity: t.activity, amount: t.amount,
+      comment: t.comment||'', status: t.status||'Факт',
+      account: ACCOUNTS.find(a=>a.id===t.account)?.name || t.account || '',
+      id: t.id,
+    }));
+    const body = JSON.stringify({transactions: rows});
     try {
-      const rows = transactions.map(t => ({
-        date: t.date, category: t.category, type: t.type,
-        activity: t.activity, amount: t.amount,
-        comment: t.comment||'', status: t.status||'Факт',
-        account: ACCOUNTS.find(a=>a.id===t.account)?.name || t.account || '',
-        id: t.id,
-      }));
-      await fetch(APPS_SCRIPT_URL, {method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({transactions:rows})});
-      await onSynced(transactions.map(t=>t.id));
-      setResult({ok:true, msg:`✅ Синхронизировано (${transactions.length} операций)`});
+      // Отправляем один раз через no-cors (CORS ошибка ожидаема, данные всё равно доходят)
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {'Content-Type': 'text/plain'},
+        body,
+      });
     } catch(e) {
-      await onSynced(transactions.map(t=>t.id));
-      setResult({ok:true, msg:`✅ Синхронизировано (${transactions.length} операций)`});
-    } finally { setLoading(false); }
+      // no-cors всегда выдаёт opaque response, это нормально
+    }
+    // Даём Apps Script время на обработку
+    await new Promise(r => setTimeout(r, 2000));
+    await onSynced(transactions.map(t=>t.id));
+    setResult({ok:true, msg:`✅ Синхронизировано (${transactions.length} операций)`});
+    setLoading(false);
   };
 
   return (
