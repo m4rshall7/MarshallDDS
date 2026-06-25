@@ -561,8 +561,7 @@ function SyncScreen({ transactions, onSynced }) {
       account: ACCOUNTS.find(a=>a.id===t.account)?.name || t.account || '',
       id: t.id,
     }));
-    const body = JSON.stringify({transactions: rows});
-    try {
+    try {       const response = await fetch('/api/sheets', {         method: 'POST',         headers: {'Content-Type': 'application/json'},         body: JSON.stringify({transactions: rows}),       });       const data = await response.json();       if (!data.ok && data.error) {         setResult({ok:false, msg:`❌ Ошибка: ${data.error}`});         setLoading(false);         return;       }     } catch(e) {       setResult({ok:false, msg:`❌ Ошибка: ${e.message}`});       setLoading(false);       return;     }     const body = JSON.stringify({transactions: rows});
       // Отправляем один раз через no-cors (CORS ошибка ожидаема, данные всё равно доходят)
       await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
