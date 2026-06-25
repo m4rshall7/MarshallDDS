@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL;
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOYkEc0yk_Je_TsBxaPE09ZhIV2FQkGGP90vs0IG6oPbwd8S5bXswuWbMU44OV4T2MGw/exec";
 
   if (!APPS_SCRIPT_URL) {
     return res.status(500).json({ error: 'APPS_SCRIPT_URL not configured' });
