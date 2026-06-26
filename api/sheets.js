@@ -5,7 +5,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyHVTGRQwGx4lniZ2DKuElXzMAknrasw6TCEYpiXbSOZfjocS7-iDqg4DIqHjJsETsc/exec";
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKpzs77OhezQjDAVcHxwShtMUySRGmr8QD51tO_xNQvLr7Bj7VzJ3QsspSCpkKCFIH/exec";
 
   try {
     if (req.method === 'POST') {
