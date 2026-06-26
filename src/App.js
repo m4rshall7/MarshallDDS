@@ -339,8 +339,35 @@ function AddScreen({ onSave, onClose, editTx }) {
 
 // ─── ACCOUNTS SCREEN ────────────────────────────────────
 function AccountsScreen({ transactions }) {
+  const [customAccounts, setCustomAccounts] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('customAccounts') || 'null') || ACCOUNTS; }
+    catch { return ACCOUNTS; }
+  });
+  const [editingAccount, setEditingAccount] = useState(null); // { id, name, emoji, initBalance }
+  const [editForm, setEditForm] = useState({});
+
+  const saveCustom = (updated) => {
+    setCustomAccounts(updated);
+    localStorage.setItem('customAccounts', JSON.stringify(updated));
+  };
+
+  const openEdit = (a) => {
+    setEditingAccount(a.id);
+    setEditForm({ name: a.name, emoji: a.emoji, color: a.color, initBalance: a.initBalance || 0 });
+  };
+
+  const saveEdit = () => {
+    const updated = customAccounts.map(a =>
+      a.id === editingAccount
+        ? { ...a, name: editForm.name, emoji: editForm.emoji, color: editForm.color, initBalance: parseFloat(editForm.initBalance) || 0 }
+        : a
+    );
+    saveCustom(updated);
+    setEditingAccount(null);
+  };
+
   const balances = {};
-  ACCOUNTS.forEach(a => { balances[a.id] = 0; });
+  customAccounts.forEach(a => { balances[a.id] = a.initBalance || 0; });
 
   transactions.forEach(tx => {
     if ((tx.status||'Факт') === 'План') return;
@@ -356,39 +383,119 @@ function AccountsScreen({ transactions }) {
 
   const total = Object.values(balances).reduce((s,v)=>s+v,0);
 
+  const PALETTE = ['#F9A825','#1B6B40','#D32F2F','#1565C0','#5D4037','#212121','#388E3C','#7B1FA2','#E64A19','#0097A7'];
+  const EMOJIS  = ['🟡','🟢','🔴','🔵','🟤','⚫','💵','💳','🏦','💰','🏧','📱'];
+
   return (
     <div style={{padding:'0 16px 16px',fontFamily:'Arial,sans-serif'}}>
-      {/* Total */}
+      {/* Общий баланс */}
       <div style={{background:'#1A1A2E',borderRadius:20,padding:'20px 16px',marginBottom:16,textAlign:'center'}}>
         <div style={{fontSize:12,color:'#94a3b8',marginBottom:4}}>Общий баланс всех счетов</div>
         <div style={{fontSize:32,fontWeight:700,color:total>=0?'#4ADE80':'#F87171'}}>{fmt(total)} ₽</div>
       </div>
 
-      {/* Each account */}
+      {/* Счета */}
       <div style={{display:'flex',flexDirection:'column',gap:10}}>
-        {ACCOUNTS.map(a => {
+        {customAccounts.map(a => {
           const bal = balances[a.id] || 0;
           return (
-            <div key={a.id} style={{background:'#fff',borderRadius:16,padding:'16px',boxShadow:'0 1px 4px rgba(0,0,0,0.08)',display:'flex',alignItems:'center',justifyContent:'space-between',border:`1px solid ${a.color}22`}}>
-              <div style={{display:'flex',alignItems:'center',gap:12}}>
-                <div style={{width:44,height:44,borderRadius:12,background:a.color+'22',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>
-                  {a.emoji}
-                </div>
-                <div>
-                  <div style={{fontSize:14,fontWeight:700,color:'#1A1A2E'}}>{a.name}</div>
-                  <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>
-                    {transactions.filter(t=>t.account===a.id&&(t.status||'Факт')!=='План').length} операций
+            <div key={a.id} style={{background:'#fff',borderRadius:16,padding:'14px 16px',boxShadow:'0 1px 4px rgba(0,0,0,0.08)',border:`1px solid ${a.color}33`}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <div style={{display:'flex',alignItems:'center',gap:12}}>
+                  <div style={{width:44,height:44,borderRadius:12,background:a.color+'22',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22}}>
+                    {a.emoji}
+                  </div>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:700,color:'#1A1A2E'}}>{a.name}</div>
+                    <div style={{fontSize:11,color:'#94a3b8',marginTop:2}}>
+                      {transactions.filter(t=>t.account===a.id&&(t.status||'Факт')!=='План').length} операций
+                    </div>
                   </div>
                 </div>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{textAlign:'right'}}>
+                    <div style={{fontSize:18,fontWeight:700,color:bal>=0?'#1B6B40':'#922B21'}}>{fmt(bal)} ₽</div>
+                    <div style={{fontSize:11,color:'#94a3b8'}}>{bal>=0?'актив':'дефицит'}</div>
+                  </div>
+                  <button onClick={()=>openEdit(a)}
+                    style={{background:'#f1f5f9',border:'none',borderRadius:10,width:34,height:34,
+                      cursor:'pointer',fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    ✏️
+                  </button>
+                </div>
               </div>
-              <div style={{textAlign:'right'}}>
-                <div style={{fontSize:18,fontWeight:700,color:bal>=0?'#1B6B40':'#922B21'}}>{fmt(bal)} ₽</div>
-                <div style={{fontSize:11,color:'#94a3b8'}}>{bal>=0?'актив':'дефицит'}</div>
-              </div>
+              {(a.initBalance||0) !== 0 && (
+                <div style={{marginTop:8,fontSize:11,color:'#94a3b8',paddingLeft:56}}>
+                  Начальный остаток: {fmt(a.initBalance||0)} ₽
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+
+      {/* Модальное окно редактирования */}
+      {editingAccount && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:200,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+          <div style={{background:'#fff',borderRadius:'20px 20px 0 0',padding:'20px 20px 36px',width:'100%',maxWidth:430}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+              <div style={{fontSize:17,fontWeight:700,color:'#1A1A2E'}}>Редактировать счёт</div>
+              <button onClick={()=>setEditingAccount(null)}
+                style={{background:'#f1f5f9',border:'none',borderRadius:10,width:34,height:34,cursor:'pointer',fontSize:18}}>✕</button>
+            </div>
+
+            {/* Эмодзи */}
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:12,color:'#64748b',fontWeight:600,marginBottom:8}}>Иконка</div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                {EMOJIS.map(em => (
+                  <button key={em} onClick={()=>setEditForm(f=>({...f,emoji:em}))}
+                    style={{width:40,height:40,borderRadius:10,border:editForm.emoji===em?'2px solid #0F3460':'1px solid #e2e8f0',
+                      background:editForm.emoji===em?'#EBF5FB':'#fff',fontSize:20,cursor:'pointer'}}>
+                    {em}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Название */}
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:12,color:'#64748b',fontWeight:600,marginBottom:6}}>Название</div>
+              <input value={editForm.name} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))}
+                style={{width:'100%',padding:'12px 14px',borderRadius:12,border:'1.5px solid #e2e8f0',
+                  fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+            </div>
+
+            {/* Начальный остаток */}
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:12,color:'#64748b',fontWeight:600,marginBottom:6}}>Начальный остаток (₽)</div>
+              <input type="number" value={editForm.initBalance} onChange={e=>setEditForm(f=>({...f,initBalance:e.target.value}))}
+                style={{width:'100%',padding:'12px 14px',borderRadius:12,border:'1.5px solid #e2e8f0',
+                  fontSize:14,outline:'none',boxSizing:'border-box'}}/>
+              <div style={{fontSize:11,color:'#94a3b8',marginTop:4}}>Сумма на счёте до начала учёта в приложении</div>
+            </div>
+
+            {/* Цвет */}
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:12,color:'#64748b',fontWeight:600,marginBottom:8}}>Цвет</div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                {PALETTE.map(c => (
+                  <button key={c} onClick={()=>setEditForm(f=>({...f,color:c}))}
+                    style={{width:32,height:32,borderRadius:8,background:c,border:editForm.color===c?'3px solid #1A1A2E':'2px solid #fff',
+                      boxShadow:'0 0 0 1px #e2e8f0',cursor:'pointer'}}>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={saveEdit}
+              style={{width:'100%',padding:16,borderRadius:14,border:'none',background:'#0F3460',
+                color:'#fff',fontSize:16,fontWeight:700,cursor:'pointer'}}>
+              Сохранить
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -548,58 +655,156 @@ function HistoryScreen({ transactions, onDelete, onEdit }) {
 }
 
 // ─── SYNC ───────────────────────────────────────────────
-function SyncScreen({ transactions, onSynced }) {
-  const [loading, setLoading] = useState(false);
-  const [result, setResult]   = useState(null);
+function SyncScreen({ transactions, onSynced, onImport }) {
+  const [loading, setLoading]   = useState(false);
+  const [pulling, setPulling]   = useState(false);
+  const [result, setResult]     = useState(null);
+  const [lastSync, setLastSync] = useState(() => localStorage.getItem('lastSync') || null);
 
-  const handleSync = async () => {
-    setLoading(true); setResult(null);
-    const rows = transactions.map(t => ({
-      date: t.date, category: t.category, type: t.type,
-      activity: t.activity, amount: t.amount,
-      comment: t.comment||'', status: t.status||'Факт',
-      account: ACCOUNTS.find(a=>a.id===t.account)?.name || t.account || '',
-      id: t.id,
-    }));try {
+  // Авто-синхронизация каждые 5 минут (push → Sheets)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const unsynced = transactions.filter(t => !t.synced);
+      if (unsynced.length > 0) pushToSheets(unsynced);
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [transactions]);
+
+  const buildRows = (txList) => txList.map(t => ({
+    id:       t.id,
+    date:     t.date,
+    category: t.category,
+    type:     t.type,
+    activity: t.activity,
+    amount:   t.amount,
+    comment:  t.comment || '',
+    status:   t.status || 'Факт',
+    account:  ACCOUNTS.find(a => a.id === t.account)?.name || t.account || '',
+  }));
+
+  // ── Push: Firebase → Sheets ──
+  const pushToSheets = async (txList) => {
+    try {
       const response = await fetch('/api/sheets', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({transactions: rows}),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactions: buildRows(txList) }),
       });
       const data = await response.json();
-      if (!data.ok && data.error) {
-        setResult({ok:false, msg:`❌ Ошибка: ${data.error}`});
-        setLoading(false);
-        return;
+      if (data.ok) {
+        await onSynced(txList.map(t => t.id));
+        const now = new Date().toLocaleString('ru-RU');
+        setLastSync(now);
+        localStorage.setItem('lastSync', now);
       }
-    } catch(e) {
-      setResult({ok:false, msg:`❌ Ошибка: ${e.message}`});
-      setLoading(false);
-      return;
+      return data;
+    } catch (e) {
+      return { ok: false, error: e.message };
     }
-    await onSynced(transactions.map(t=>t.id));
-    setResult({ok:true, msg:`✅ Синхронизировано (${transactions.length} операций)`});
+  };
+
+  // ── Полная синхронизация вручную (все транзакции) ──
+  const handleFullSync = async () => {
+    setLoading(true); setResult(null);
+    const data = await pushToSheets(transactions);
+    if (!data.ok) {
+      setResult({ ok: false, msg: `❌ Ошибка: ${data.error}` });
+    } else {
+      setResult({ ok: true, msg: `✅ Готово! ${transactions.length} операций → Google Sheets` });
+    }
     setLoading(false);
   };
 
+  // ── Pull: Sheets → Firebase (импорт ручных записей из таблицы) ──
+  const handlePull = async () => {
+    setPulling(true); setResult(null);
+    try {
+      const response = await fetch('/api/sheets', { method: 'GET' });
+      const data = await response.json();
+      if (!data.ok || !data.transactions) {
+        setResult({ ok: false, msg: `❌ Ошибка чтения таблицы` });
+        setPulling(false);
+        return;
+      }
+      // Передаём в App для merge с Firebase
+      const imported = await onImport(data.transactions);
+      setResult({ ok: true, msg: `📥 Импортировано ${imported} новых записей из таблицы` });
+    } catch (e) {
+      setResult({ ok: false, msg: `❌ ${e.message}` });
+    }
+    setPulling(false);
+  };
+
+  const unsynced = transactions.filter(t => !t.synced).length;
+
   return (
     <div style={{padding:'0 16px 16px',fontFamily:'Arial,sans-serif'}}>
-      <div style={{background:'#EBF5FB',borderRadius:16,padding:'20px 16px',marginBottom:16,border:'1.5px solid #0F3460',textAlign:'center'}}>
-        <div style={{fontSize:32,marginBottom:6}}>🔄</div>
-        <div style={{fontSize:16,fontWeight:700,color:'#1A1A2E',marginBottom:4}}>Полная синхронизация</div>
-        <div style={{fontSize:12,color:'#64748b'}}>Firebase = источник правды. Таблица перезапишется полностью.</div>
+      {/* Статус */}
+      <div style={{background:'#EBF5FB',borderRadius:16,padding:'16px',marginBottom:14,border:'1.5px solid #0F3460'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+          <span style={{fontSize:28}}>🔄</span>
+          <div>
+            <div style={{fontSize:15,fontWeight:700,color:'#1A1A2E'}}>Google Sheets</div>
+            <div style={{fontSize:11,color:'#64748b'}}>Двусторонняя синхронизация</div>
+          </div>
+          <div style={{marginLeft:'auto',textAlign:'right'}}>
+            <div style={{fontSize:10,color:'#94a3b8'}}>Авто каждые 5 мин</div>
+            {lastSync && <div style={{fontSize:10,color:'#1B6B40',fontWeight:600}}>{lastSync}</div>}
+          </div>
+        </div>
+        {unsynced > 0 && (
+          <div style={{background:'#FEF9E7',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#B7950B',fontWeight:600}}>
+            ⚠️ {unsynced} операций ещё не синхронизированы
+          </div>
+        )}
       </div>
-      <button onClick={handleSync} disabled={loading}
-        style={{width:'100%',padding:18,borderRadius:16,border:'none',background:!loading?'#0F3460':'#e2e8f0',color:!loading?'#fff':'#94a3b8',fontSize:17,fontWeight:700,cursor:'pointer',marginBottom:14}}>
-        {loading?'⏳ Синхронизируем...':'🔄 Полная синхронизация с Google Sheets'}
+
+      {/* Кнопка полной синхронизации */}
+      <button onClick={handleFullSync} disabled={loading || pulling}
+        style={{width:'100%',padding:16,borderRadius:14,border:'none',
+          background:loading?'#e2e8f0':'#0F3460',
+          color:loading?'#94a3b8':'#fff',
+          fontSize:15,fontWeight:700,cursor:'pointer',marginBottom:10,
+          display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+        <span>{loading ? '⏳' : '📤'}</span>
+        {loading ? 'Отправляем в таблицу...' : 'Полная синхронизация → Sheets'}
       </button>
-      {result&&<div style={{background:result.ok?'#D5F5E3':'#FADBD8',borderRadius:10,padding:'12px 14px',marginBottom:14,fontSize:13,color:result.ok?'#1B6B40':'#922B21',fontWeight:600}}>{result.msg}</div>}
+
+      {/* Кнопка импорта из таблицы */}
+      <button onClick={handlePull} disabled={loading || pulling}
+        style={{width:'100%',padding:16,borderRadius:14,border:'2px solid #0F3460',
+          background:pulling?'#e2e8f0':'#fff',
+          color:pulling?'#94a3b8':'#0F3460',
+          fontSize:15,fontWeight:700,cursor:'pointer',marginBottom:14,
+          display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+        <span>{pulling ? '⏳' : '📥'}</span>
+        {pulling ? 'Читаем таблицу...' : 'Импорт из таблицы → Приложение'}
+      </button>
+
+      {result && (
+        <div style={{background:result.ok?'#D5F5E3':'#FADBD8',borderRadius:10,
+          padding:'12px 14px',marginBottom:14,fontSize:13,
+          color:result.ok?'#1B6B40':'#922B21',fontWeight:600}}>
+          {result.msg}
+        </div>
+      )}
+
+      {/* Статистика */}
       <div style={{background:'#f8fafc',borderRadius:14,padding:14}}>
         <div style={{fontSize:13,fontWeight:700,color:'#1A1A2E',marginBottom:10}}>📊 Статистика</div>
-        {[['Всего',transactions.length],['Факт',transactions.filter(t=>t.status!=='План'&&t.type!=='Перевод').length],['Переводы',transactions.filter(t=>t.type==='Перевод').length],['План',transactions.filter(t=>t.status==='План').length],['Не синхр.',transactions.filter(t=>!t.synced).length]].map(([k,v])=>(
-          <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid #e2e8f0',fontSize:12}}>
+        {[
+          ['Всего операций',  transactions.length],
+          ['Поступления',     transactions.filter(t=>t.type==='Поступление').length],
+          ['Выплаты',         transactions.filter(t=>t.type==='Выплата').length],
+          ['Переводы',        transactions.filter(t=>t.type==='Перевод').length],
+          ['Факт',            transactions.filter(t=>t.status==='Факт').length],
+          ['План',            transactions.filter(t=>t.status==='План').length],
+          ['Не синхронизовано', unsynced],
+        ].map(([k,v]) => (
+          <div key={k} style={{display:'flex',justifyContent:'space-between',
+            padding:'6px 0',borderBottom:'1px solid #e2e8f0',fontSize:12}}>
             <span style={{color:'#64748b'}}>{k}</span>
-            <span style={{fontWeight:700,color:'#1A1A2E'}}>{v}</span>
+            <span style={{fontWeight:700,color:k==='Не синхронизовано'&&v>0?'#F39C12':'#1A1A2E'}}>{v}</span>
           </div>
         ))}
       </div>
@@ -650,6 +855,29 @@ export default function App() {
     setTxs(prev=>prev.map(t=>ids.includes(t.id)?{...t,synced:true}:t));
   },[]);
 
+  // Импорт из таблицы: добавляем только те записи которых нет в Firebase
+  const handleImport = useCallback(async(sheetTxs) => {
+    const existingIds = new Set(transactions.map(t => t.id));
+    const newTxs = sheetTxs.filter(t => t.id && !existingIds.has(t.id));
+    let count = 0;
+    for (const t of newTxs) {
+      try {
+        await setDoc(doc(db,'transactions', t.id), {
+          ...t,
+          synced: true,
+          createdAt: serverTimestamp(),
+        });
+        count++;
+      } catch {}
+    }
+    if (count > 0) {
+      const q = query(collection(db,'transactions'), orderBy('createdAt','desc'));
+      const snap = await getDocs(q);
+      setTxs(snap.docs.map(d=>({id:d.id,...d.data()})));
+    }
+    return count;
+  },[transactions]);
+
   const unsyncedCount=transactions.filter(t=>!t.synced).length;
   const tabs=[
     {id:'dashboard',label:'Дашборд',icon:'📊'},
@@ -663,7 +891,7 @@ export default function App() {
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}*{box-sizing:border-box}body{margin:0;background:#f8fafc}input,button{font-family:Arial,sans-serif}`}</style>
       <div style={{background:'#1A1A2E',color:'#fff',padding:'14px 20px 10px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:50}}>
         <div>
-          <div style={{fontSize:18,fontWeight:700}}>Marshall DDS</div>
+          <div style={{fontSize:18,fontWeight:700}}>ДДС ИП Карина М.</div>
           <div style={{fontSize:10,color:'#94a3b8'}}>Учёт движения денег</div>
         </div>
         <button onClick={()=>setShowAdd(true)} style={{background:'#0F3460',border:'none',color:'#fff',width:44,height:44,borderRadius:12,fontSize:24,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}}>+</button>
@@ -674,7 +902,7 @@ export default function App() {
             {tab==='dashboard'&&<DashboardScreen transactions={transactions}/>}
             {tab==='accounts' &&<AccountsScreen  transactions={transactions}/>}
             {tab==='history'  &&<HistoryScreen   transactions={transactions} onDelete={handleDelete} onEdit={tx=>setEditTx(tx)}/>}
-            {tab==='sync'     &&<SyncScreen      transactions={transactions} onSynced={handleSynced}/>}
+            {tab==='sync'     &&<SyncScreen      transactions={transactions} onSynced={handleSynced} onImport={handleImport}/>}
           </>
         )}
       </div>
